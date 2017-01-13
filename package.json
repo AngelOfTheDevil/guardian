@@ -1,0 +1,16 @@
+{
+  "name": "guardian",
+  "version": "0.0.1",
+  "description": "Helper bot for the Hope server on Discord",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Evelyne Lachance <eslachance@gmail.com> (http://evie.codes/)",
+  "license": "MIT",
+  "dependencies": {
+    "erlpack": "github:hammerandchisel/erlpack",
+    "sqlite": "^2.2.4",
+    "uws": "^0.11.1"
+  }
+}
