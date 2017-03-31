@@ -1,3 +1,3 @@
 const komada = require('komada');
 const config = require('./config.json');
-komada.start(config);
+const client = komada.start(config);

@@ -7,11 +7,12 @@ exports.help = {
   description: "Displays the join server link of the bot.",
   usage: "",
   usageDelim: "",
+  extendedHelp: "",
 };
 
 exports.conf = {
   enabled: false,
-  guildOnly: true,
+  runIn: ["text", "dm"],
   aliases: [],
   permLevel: 0,
   botPerms: [],

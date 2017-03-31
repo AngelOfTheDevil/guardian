@@ -1,7 +1,7 @@
 let db;
 
 exports.run = (client, msg, [action, ...contents]) => {
-  if(!client.dataProviders.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
+  if(!client.providers.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
   if(!contents && ["add", "delete"].includes(action)) return msg.reply("you must provide a name for this action.");
 
   if(!action) {
@@ -20,7 +20,7 @@ exports.run = (client, msg, [action, ...contents]) => {
   }
 
   if(action === "delete") {
-    db.get(client, "tags", "name", action)
+    db.get(client, "tags", "name", contents[0])
     .then(row => {
       if(!row) return msg.reply("this tag doesn't seem to exist.");
       db.delete(client, "tags", row.id)
@@ -55,7 +55,7 @@ exports.run = (client, msg, [action, ...contents]) => {
 
 exports.conf = {
   enabled: true,
-  guildOnly: false,
+  runIn: ["text", "dm"],
   aliases: ["tags"],
   permLevel: 0,
   botPerms: [],
@@ -67,19 +67,22 @@ exports.help = {
   description: "Server-Specific tags",
   usage: "[action:string] [contents:string] [...]",
   usageDelim: " ",
+  extendedHelp: `Tags are server-specific. Example usage:
+\`g!tags add myTag I kissed a tag and I *liked it*!\` creates the \`myTag\` tag.
+\`g!tags delete myTag\` deletes the tag.
+\`g!tags random\` displays a random tag (use at your own risk!)`,
 };
 
 exports.init = (client) => {
-  if (!client.dataProviders.has("sqlite")) {
+  if (!client.providers.has("sqlite")) {
     console.log("tag Command: No Database Found");
   }
-  db = client.dataProviders.get("sqlite");
+  db = client.providers.get("sqlite");
   db.hasTable(client, "tags")
     .then(res => {
       if (!res) {
         let keys = "<name:str> <count:int> <contents:str> <enabled:bool> <embed:bool> <title:str> <footer:str>";
         db.createTable(client, "tags", keys).catch(console.error);
       }
-      client.config.init.push("tags");
     });
 };

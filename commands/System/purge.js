@@ -17,7 +17,7 @@ exports.run = (client, msg, [user, amount]) => {
 
 exports.conf = {
   enabled: true,
-  guildOnly: false,
+  runIn: ["text", "dm"],
   selfbot: false,
   aliases: [],
   permLevel: 2,
@@ -30,4 +30,5 @@ exports.help = {
   description: "This will remove X amount of messages sent in a channel, or by Y user.",
   usage: "[user:mention] <amount:int{1,100}>",
   usageDelim: " ",
+  extendedHelp: "",
 };

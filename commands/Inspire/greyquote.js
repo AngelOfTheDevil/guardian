@@ -1,7 +1,7 @@
 let db;
 
 exports.run = (client, msg, [action, ...contents]) => {
-  if(!client.dataProviders.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
+  if(!client.providers.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
   if(!contents && ["add", "delete"].includes(action)) return msg.reply("you must provide a name for this action.");
 
   if(!action) {
@@ -55,7 +55,7 @@ exports.run = (client, msg, [action, ...contents]) => {
 
 exports.conf = {
   enabled: true,
-  guildOnly: false,
+  runIn: ["text", "dm"],
   aliases: ["gq", "quote"],
   permLevel: 0,
   botPerms: [],
@@ -67,19 +67,19 @@ exports.help = {
   description: "Inspirational quote from Grey's Anatomy",
   usage: "[action:string] [contents:string] [...]",
   usageDelim: " ",
+  extendedHelp: "",
 };
 
 exports.init = (client) => {
-  if (!client.dataProviders.has("sqlite")) {
+  if (!client.providers.has("sqlite")) {
     console.log("greyquote Command: No Database Found");
   }
-  db = client.dataProviders.get("sqlite");
+  db = client.providers.get("sqlite");
   db.hasTable(client, "greyquotes")
     .then(res => {
       if (!res) {
         let keys = "<name:str> <count:int> <contents:str>";
         db.createTable(client, "greyquotes", keys).catch(console.error);
       }
-      client.config.init.push("greyquotes");
     });
 };

@@ -32,9 +32,9 @@ exports.run = (client, msg, [search, resultNum]) => {
 exports.conf = {
   enabled: true,
   selfbot: false,
-  guildOnly: false,
+  runIn: ["text", "dm"],
   aliases: ["df", "urbandic"],
-  permLevel: 2,
+  permLevel: 0,
   botPerms: [],
   requiredFuncs: [],
 };
@@ -44,4 +44,5 @@ exports.help = {
   description: "Searches the Urban Dictionary library for a definition to the search term.",
   usage: "<search:str> [resultNum:int]",
   usageDelim: ", ",
+  extendedHelp: "",
 };
