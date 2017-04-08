@@ -4,7 +4,7 @@ exports.conf = {
   ignoreSelf: false,
 };
 
-const bannedWords = ["kys", "killyourself", "killurself", "kms", "killmyself", "killme"];
+const bannedWords = ["kys", "killyourself", "killurself", "killmyself", "killme"];
 
 exports.run = (client, msg) => {
   const cleanMsg = msg.content.toLowerCase().replace(/[^a-z]/gi, '');
