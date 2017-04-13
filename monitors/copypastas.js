@@ -14,9 +14,10 @@ exports.conf = {
 
 
 exports.run = async (client, msg) => {
-  const cleanMsg = msg.content.toLowerCase();
   if(!msg.guild || !msg.member) return; // Second part is about webhooks.
   if(msg.member.permLevel > 0) return;
+  if(msg.guild.id === "110373943822540800") return;
+  const cleanMsg = msg.content.toLowerCase();
   if(cleanMsg.includes("public service announcement")) { 
     let deleted = false;
     try { 

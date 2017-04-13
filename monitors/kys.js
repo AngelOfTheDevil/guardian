@@ -7,6 +7,8 @@ exports.conf = {
 const bannedWords = ["kys", "killyourself", "killurself", "killmyself", "killme"];
 
 exports.run = (client, msg) => {
+  if(!msg.guild || !msg.member) return;
+  if(msg.guild.id === "110373943822540800") return;
   const cleanMsg = msg.content.toLowerCase().replace(/[^a-z]/gi, '');
   let triggered = false;
   bannedWords.every(w=>{

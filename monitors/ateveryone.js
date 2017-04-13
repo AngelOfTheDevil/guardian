@@ -22,7 +22,7 @@ exports.conf = {
 
 exports.run = async (client, msg) => {
   if(!msg.guild || !msg.member) return; // Second part is about webhooks.
-  //if(msg.member.permLevel > 0) return;
+  if(msg.member.permLevel > 0) return;
   const everyoneRole = msg.guild.roles.find(r=>r.name.toLowerCase() === "everyone");
   if(!everyoneRole) return;
   if(msg.mentions.roles.size < 1) return;

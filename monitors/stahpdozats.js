@@ -8,6 +8,8 @@ exports.conf = {
 };
 
 exports.run = async (client, msg) => {
+  if(!msg.guild || !msg.member) return;
+  if(msg.guild.id === "110373943822540800") return;
 
   let conf = client.funcs.confs.get(msg.guild);
   if(!conf.ban_level) {

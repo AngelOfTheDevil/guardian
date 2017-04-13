@@ -9,6 +9,7 @@
   "author": "Evelyne Lachance <eslachance@gmail.com> (http://evie.codes/)",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.17.1",
     "erlpack": "github:hammerandchisel/erlpack",
     "helmet": "^3.5.0",
     "komada": "github:eslachance/komada#indev",
