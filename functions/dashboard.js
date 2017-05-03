@@ -166,8 +166,12 @@ exports.init = (client) => {
     } else if (!isManaged) {
       return res.status(403).send({ success: false, message: "You do not have permission to execute this command." });
     }
-    const response = await this[req.params.cmd](req.params.id, req.body).catch(e => res.status(500).send(e));
-    if (response) return res.json({ success: true, message: "Something" });
+    try {
+      await this[req.params.cmd](req.params.id, req.body);
+      return res.json({ success: true, message: "Something" });
+    } catch (e) {
+      res.status(500).send(e);
+    }
   });
 
   app.get("/docs", (req, res) => {
