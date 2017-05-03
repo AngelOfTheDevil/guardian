@@ -170,7 +170,7 @@ exports.init = (client) => {
       await this[req.params.cmd](req.params.id, req.body);
       return res.json({ success: true, message: "Something" });
     } catch (e) {
-      res.status(500).send(e);
+      return res.status(500).send(e);
     }
   });
 
