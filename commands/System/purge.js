@@ -1,4 +1,4 @@
-exports.run = (client, msg, [user, amount]) => {
+exports.run = async (client, msg, [user, amount]) => {
   msg.channel.fetchMessages({
     limit: amount,
   }).then((messages) => {
@@ -17,7 +17,7 @@ exports.run = (client, msg, [user, amount]) => {
 
 exports.conf = {
   enabled: true,
-  runIn: ["text", "dm"],
+  runIn: ["text"],
   selfbot: false,
   aliases: [],
   permLevel: 2,

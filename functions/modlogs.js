@@ -6,12 +6,16 @@ const embedTypes = {
   mute: 0xdb0050
 };
 
-exports.init = (client) => {
-  if (!client.configuration.hasKey("modLog")) {
-    client.configuration.addKey("modLog", "mod-log", "String");
-    client.configuration.addKey("modLog-embed", true, "Boolean");
-    client.configuration.toggle("modLog-embed");
+exports.init = async (client) => {
+  const schemaManager = client.settingGateway.schemaManager;
+  if (!schemaManager.schema["modLog"]) {
+    await schemaManager.add("modLog", {type: "Channel"}, true);
+    await schemaManager.add("modLog-embed", {type: "Boolean", default: true}, true);
   }
+  client.modActions = new client.methods.Collection();
+  client.modActions.set('bans', new client.methods.Collection());
+  client.modActions.set('kicks', new client.methods.Collection());
+  client.modActions.set('mutes', new client.methods.Collection());
 };
 
 exports.createEmbed = (client, author, target, action, reason) => {
@@ -35,10 +39,11 @@ exports.createEmbed = (client, author, target, action, reason) => {
 
 exports.post = async (client, guild, content) => {
   return new Promise( async (resolve, reject) => {
-    let modLog = guild.channels.find(c=>c.name.toLowerCase() === client.guildConfs.get(guild.id).modLog.data);
-    let isEmbed = client.guildConfs.get(guild.id)["modLog-embed"];
+    const conf = client.settingGateway.get(guild.id);
+    let modLog = guild.channels.find(c=>c.name.toLowerCase() === conf.modLog.data);
+    let isEmbed = conf["modLog-embed"];
     if (!modLog) {
-      return reject(`I cannot find the mod log channel! (${client.guildConfs.get(guild.id).modLog.data})`);
+      return reject(`I cannot find the mod log channel! (${conf.modLog.data})`);
     }
     if (!isEmbed && content.constructor.name === "RichEmbed") {
       return reject(`Settings do not permit embed messages. Please send a instead.`);

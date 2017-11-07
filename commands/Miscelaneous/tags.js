@@ -1,6 +1,6 @@
 let db;
 
-exports.run = (client, msg, [action, ...contents]) => {
+exports.run = async (client, msg, [action, ...contents]) => {
   if(!client.providers.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
   if(!contents && ["add", "delete"].includes(action)) return msg.reply("you must provide a name for this action.");
 

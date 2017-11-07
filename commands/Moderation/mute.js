@@ -1,7 +1,7 @@
 exports.init = (client) => {
 };
 
-exports.run = (client, msg, [member, ...reason]) => {
+exports.run = async (client, msg, [member, ...reason]) => {
   reason = reason.join(" ");
   
   let muteRole = msg.guild.roles.find(r=>r.name.toLowerCase() === "muted");

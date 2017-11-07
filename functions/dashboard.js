@@ -137,11 +137,13 @@ exports.init = (client) => {
     });
   });
 
-  app.get('/manage/:id', checkAuth, async(req, res) => {
-    const guild = client.guilds.get(req.params.id);
-    const isManaged = !!guild.member(req.user.id) ? guild.member(req.user.id).permissions.has("MANAGE_GUILD") : false;
+  app.get('/manage/:guildID', checkAuth, async(req, res) => {
+    console.log(req.params);
+    const guild = client.guilds.get(req.params.guildID);
+    if(!guild) return res.status(404);
+    const isManaged = guild && !!guild.member(req.user.id) ? guild.member(req.user.id).permissions.has("MANAGE_GUILD") : false;
     if (req.user.id === client.config.ownerID) {
-      console.log(`Admin bypass for managing server: ${guild.id} from IP ${req.ip}`);
+      console.log(`Admin bypass for managing server: ${req.params.guildID} from IP ${req.ip}`);
     } else if (!isManaged) {
       res.redirect('/');
     }
@@ -154,20 +156,26 @@ exports.init = (client) => {
     });
   });
   
-  app.post('/execute/:id/:cmd', checkAuth, async(req, res) => {
-    const guild = client.guilds.get(req.params.id);
-    //console.log(guild.name);
-    //console.log(require("util").inspect(guild, {depth: 1}))
-    if(!guild) return res.status(404);
-    if(typeof this[req.params.cmd] !== "function") return res.status(404);
-    const isManaged = !!guild.member(req.user.id) ? guild.member(req.user.id).permissions.has("MANAGE_GUILD") : false;
-    if (req.user.id === client.config.ownerID) {
-      console.log(`Admin bypass for executing command ${req.params.cmd} on server: ${guild.id} from IP ${req.ip}`);
-    } else if (!isManaged) {
-      return res.status(403).send({"success": false, "message": "You do not have permission to execute this command."});
+  app.post('/execute/:guildID/:cmd', checkAuth, async(req, res) => {
+    try{
+      console.log(req.originalUrl);
+      console.log(req.params);
+      const guild = client.guilds.get(req.params.guildID);
+      console.log(`Attempt to execute command ${req.params.cmd} on server: ${guild.id} from IP ${req.ip}`);
+      if(!guild) return res.status(404);
+      if(typeof this[req.params.cmd] !== "function") return res.status(404);
+      const isManaged = !!guild.member(req.user.id) ? guild.member(req.user.id).permissions.has("MANAGE_GUILD") : false;
+      if (req.user.id === client.config.ownerID) {
+        console.log(`Admin bypass for executing command ${req.params.cmd} on server: ${guild.id} from IP ${req.ip}`);
+      } else if (!isManaged) {
+        return res.status(403).send({"success": false, "message": "You do not have permission to execute this command."});
+      }
+      const response = await this[req.params.cmd](guild, req.body).catch(e=>res.status(500).send(e));
+      if(response) return res.json({"success": true});
+    } catch(e) {
+      console.log(e);
+      res.json({"success": false, "message": e});
     }
-    const response = await this[req.params.cmd](req.params.id, req.body).catch(e=>res.status(500).send(e));
-    if(response) return res.json({"success": true, "message": "Something"});
   });
 
   app.get('/docs', (req, res) => {
@@ -204,7 +212,7 @@ exports.leaveGuild = async (guild, options) => {
     try{
       if(options.message) await guild.channels.get(guild.id).sendMessage(options.message);
       await guild.leave();
-      resolve();
+      resolve(true);
     } catch(e) {
       console.log(e);
       reject(e);

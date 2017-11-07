@@ -7,7 +7,7 @@ const triggers = [
   ]
   
 exports.conf = {
-  enabled: true,
+  enabled: false,
   ignoreBots: true,
   ignoreSelf: false,
 };

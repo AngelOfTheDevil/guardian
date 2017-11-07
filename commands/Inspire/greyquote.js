@@ -1,6 +1,6 @@
 let db;
 
-exports.run = (client, msg, [action, ...contents]) => {
+exports.run = async (client, msg, [action, ...contents]) => {
   if(!client.providers.has("sqlite")) return msg.reply("this command requires the `sqlite` module which is not present.");
   if(!contents && ["add", "delete"].includes(action)) return msg.reply("you must provide a name for this action.");
 
@@ -39,13 +39,13 @@ exports.run = (client, msg, [action, ...contents]) => {
   if(action === "random") {
     return db.getRandom(client, "greyquotes")
     .then(row => {
-      msg.channel.sendMessage(row.contents);
+      msg.send(row.contents);
       db.update(client, "greyquotes", ["count"], [row.count++], "id", row.id);
     });
   }
   if(!["add", "delete", "random"].includes(action)) {
     db.get(client, "greyquotes", "name", action).then(row => {
-      msg.channel.sendMessage(row.contents);
+      msg.send(row.contents);
       db.update(client, "greyquotes", ["count"], [row.count++], "id", row.id);
     }).catch(e => {
       msg.reply("quote name not found.");
@@ -60,6 +60,7 @@ exports.conf = {
   permLevel: 0,
   botPerms: [],
   requiredFuncs: [],
+  cooldown: 60,
 };
 
 exports.help = {

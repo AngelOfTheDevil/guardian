@@ -8,7 +8,7 @@ const reactionFunc = (client, reaction, user) => {
   client.removeListener("messageReactionAdd", reactionFunc);
 };
 
-exports.run = (client, msg) => {
+exports.run = async (client, msg) => {
   msg.channel.sendMessage("```Spoilers! (click to reveal)```").then(m=>{
     msg.delete();
     m.react("👀").then( () =>{

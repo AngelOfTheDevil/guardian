@@ -1,3 +1,6 @@
-const komada = require('komada');
+const Komada = require('komada');
 const config = require('./config.json');
-const client = komada.start(config);
+
+const client = new Komada.Client(config);
+
+client.login(config.botToken);

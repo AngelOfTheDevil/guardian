@@ -1,160 +1,161 @@
+const { sep, resolve } = require("path");
 const db = require("sqlite");
-const fs = require("fs-extra-promisify");
+const fs = require("fs-nextra");
 
-const config = {
+exports.init = async (client) => {
+  const baseDir = resolve(client.clientBaseDir, "bwd", "provider", "sqlite");
+  await fs.ensureDir(baseDir);
+  await fs.ensureFile(`${baseDir + sep}db.sqlite`);
+  return db.open(`${baseDir + sep}db.sqlite`);
+};
+
+/* Table methods */
+
+/**
+ * Checks if a table exists.
+ * @param {string} table The name of the table you want to check.
+ * @returns {Promise<boolean>}
+ */
+exports.hasTable = table => db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
+  .then(row => !!row);
+
+/**
+ * Creates a new table.
+ * @param {string} table The name for the new table.
+ * @param {string} rows The rows for the table.
+ * @returns {Promise<Object>}
+ */
+exports.createTable = (table, rows) => db.run(`CREATE TABLE '${table}' (${rows});`);
+
+/**
+ * Drops a table.
+ * @param {string} table The name of the table to drop.
+ * @returns {Promise<Object>}
+ */
+exports.deleteTable = table => db.run(`DROP TABLE '${table}'`);
+
+/* Document methods */
+
+/**
+ * Get all documents from a table.
+ * @param {string} table The name of the table to fetch from.
+ * @returns {Promise<Object[]>}
+ */
+exports.getAll = (table, { key = null, value = null }) => {
+  if (key) return db.all(`SELECT * FROM ${table} WHERE ${key} = '${value}'`);
+  return db.all(`SELECT * FROM ${table}`);
+};
+
+/**
+ * Get a row from a table.
+ * @param {string} table The name of the table.
+ * @param {string} key The row id or the key to find by. If value is undefined, it'll search by 'id'.
+ * @param {string} [value=null] The desired value to find.
+ * @returns {Promise<?Object>}
+ */
+exports.get = (table, key, value = null) => {
+  if (key && !value) return db.get(`SELECT * FROM ${table} WHERE id = '${key}'`).catch(() => null);
+  return db.get(`SELECT * FROM ${table} WHERE ${key} = '${value}'`).catch(() => null);
+};
+
+/**
+ * Check if a row exists.
+ * @param {string} table The name of the table
+ * @param {string} value The value to search by 'id'.
+ * @returns {Promise<boolean>}
+ */
+exports.has = (table, value) => db.get(`SELECT id FROM ${table} WHERE id = '${value}'`)
+  .then(() => true)
+  .catch(() => false);
+
+/**
+ * Get a random row from a table.
+ * @param {string} table The name of the table.
+ * @returns {Promise<Object>}
+ */
+exports.getRandom = table => db.get(`SELECT * FROM ${table} ORDER BY RANDOM() LIMIT 1`);
+
+/**
+ * Insert a new document into a table.
+ * @param {string} table The name of the table.
+ * @param {string} row The row id.
+ * @param {Object} data The object with all properties you want to insert into the document.
+ * @returns {Promise<Object>}
+ */
+exports.create = (table, row, data) => {
+  const { keys, values } = this.serialize(Object.assign(data, { id: row }));
+  return db.run(`INSERT INTO ${table} (${keys.join(", ")}) VALUES(${values.join(", ")})`);
+};
+exports.set = (...args) => this.create(...args);
+exports.insert = (...args) => this.create(...args);
+
+/**
+ * Update a row from a table.
+ * @param {string} table The name of the table.
+ * @param {string} row The row id.
+ * @param {Object} data The object with all the properties you want to update.
+ * @returns {Promise<Object>}
+ */
+exports.update = (table, row, data) => {
+  const inserts = Object.entries(data).map(value => `'${value[0]}' = '${value[1]}'`).join(", ");
+  return db.run(`UPDATE '${table}' SET ${inserts} WHERE id = '${row}'`);
+};
+exports.replace = (...args) => this.update(...args);
+
+/**
+ * Delete a document from the table.
+ * @param {string} table The name of the directory.
+ * @param {string} row The row id.
+ * @returns {Promise<Object>}
+ */
+exports.delete = (table, row) => db.run(`DELETE FROM ${table} WHERE id = '${row}'`);
+
+/**
+ * Get a row from an arbitrary SQL query.
+ * @param {string} sql The query to execute.
+ * @returns {Promise<Object>}
+ */
+exports.run = sql => db.get(sql); // Returns a result row Best to be used with limit
+
+/**
+ * Get all rows from an arbitrary SQL query.
+ * @param {string} sql The query to execute.
+ * @returns {Promise<Object>}
+ */
+exports.runAll = sql => db.all(sql); // Returns **ALL** result rows
+
+/**
+ * Run arbitrary SQL query.
+ * @param {string} sql The query to execute.
+ * @returns {Promise<Object>}
+ */
+exports.exec = sql => db.run(sql);
+
+/**
+ * Transform NoSQL queries into SQL.
+ * @param {Object} data The object.
+ * @returns {Object}
+ */
+exports.serialize = (data) => {
+  const keys = [];
+  const values = [];
+  const entries = Object.entries(data);
+  for (let i = 0; i < entries.length; i++) {
+    keys[i] = entries[i][0];
+    values[i] = entries[i][1];
+  }
+
+  return { keys, values };
+};
+
+exports.conf = {
   moduleName: "sqlite",
   enabled: true,
-  baseLocation: "./bwd/db/sqlite"
-};
-exports.conf = config;
-
-const dataSchema = {
-  str: {
-    create: "TEXT",
-    insert: value => value,
-    select: value => value
-  },
-  int: {
-    create: "INTEGER",
-    insert: value => parseInt(value),
-    select: value => value
-  },
-  autoid: {
-    create: "INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE",
-    insert: () => {throw "Cannot insert Auto ID value!";},
-    select: value => value
-  },
-  timestamp: {
-    create: "DATETIME",
-    insert: value => parseInt(value),
-    select: value => value
-  },
-  autots: {
-    create: "DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL",
-    insert: () => {throw "Cannot insert Auto Timestamp value!";},
-    select: value => value
-  },
-  bool: {
-    create: "INTEGER",
-    insert: value => !value ? 0: -1,
-    select: value => !!value
-  },
-  json: {
-    create: "TEXT",
-    insert: value => JSON.stringify(value),
-    select: value => JSON.parse(value)
-  }
+  requiredModules: ["sqlite", "fs-nextra"],
 };
 
-const schemaCache = new Map();
-
-exports.init = async client => {
-  return new Promise( async (resolve, reject) => {
-    try {
-      await fs.ensureDir(config.baseLocation);
-      await db.open(`${config.baseLocation}/db.sqlite`)
-      await db.run("CREATE TABLE IF NOT EXISTS dataProviderSchemas (id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, name, schema)")
-      let rows = await db.all("SELECT * FROM dataProviderSchemas")
-      rows.map(r=> schemaCache.set(r.name, JSON.parse(r.schema)))
-      resolve();
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
-exports.insertSchema = (client, tableName, schema) => {
-  schemaCache.set(tableName, schema);
-  return db.run("INSERT INTO dataProviderSchemas (name, schema) VALUES (?, ?)", [tableName, JSON.stringify(schema)]);
-};
-
-
-
-exports.get = (client, table, key, value) => {
-  return db.get(`SELECT * FROM ${table} WHERE ${key} = '${value}'`);
-};
-
-exports.getRandom = (client, table) => {
-  return db.get(`SELECT * FROM ${table} ORDER BY RANDOM() LIMIT 1;`);
-};
-
-exports.getAll = (client, table, key=null, value=null) => {
-  if(key) {
-    return db.all(`SELECT * FROM ${table} WHERE ${key} = '${value}'`);
-  } else {
-    return db.all(`SELECT * FROM ${table}`);
-  }
-};
-
-exports.insert = (client, table, keys, values) => {
-  return new Promise( (resolve, reject) => {
-    if(!schemaCache.has(table)) reject("Table not found in schema cache");
-    let schema = schemaCache.get(table);
-    schema = schema.filter(f => keys.includes(f.name));
-    client.funcs.validateData(schema, keys, values); // automatically throws error
-    let insertValues = schema.map((field, index)=>dataSchema[field.type].insert(values[index]));
-    let questionMarks = schema.map(()=>"?").join(", ");
-    client.funcs.log("Inserting Values: " + insertValues.join(";"));
-    db.run(`INSERT INTO ${table}(${keys.join(", ")}) VALUES(${questionMarks});`, insertValues)
-      .then(resolve(true))
-      .catch(e=>reject("Error inserting data: "+e));
-  });
-};
-
-exports.has = (client, table, key, value) => {
-  return new Promise( resolve => {
-    db.get(`SELECT id FROM ${table} WHERE ${key} = '${value}'`)
-      .then(()=> resolve(true))
-      .catch(()=>resolve(false));
-  });
-};
-
-exports.update = (client, table, keys, values, whereKey, whereValue) => {
-  return new Promise( (resolve, reject) => {
-    if(!schemaCache.has(table)) reject("Table not found in schema cache");
-    let schema = schemaCache.get(table);
-    let filtered = schema.filter(f=> keys.includes(f.name));
-    client.funcs.validateData(schema, keys, values);
-    let inserts = filtered.map((field, index)=>`${field.name} = ${dataSchema[field.type].insert(values[index])}`);
-    db.run(`UPDATE ${table} SET ${inserts} WHERE ${whereKey} = '${whereValue}';`)
-      .then(resolve(true))
-      .catch(e=>reject("Error inserting data: "+e));
-  });
-};
-
-exports.delete = (client, table, key) => {
-  return db.run(`DELETE FROM ${table} WHERE id = '${key}'`);
-};
-
-exports.hasTable = (client, table) => {
-  return new Promise( (resolve, reject) => {
-    db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}';`)
-      .then((row)=> {
-        if(!row) resolve(false);
-        resolve(true)
-      })
-      .catch(e => reject(e));
-  });
-};
-
-exports.createTable = (client, tableName, keys) => {
-  return new Promise( async (resolve, reject) => {
-    let tags = client.funcs.parseTags(keys);
-    let schema = client.funcs.createDBSchema(tags);
-    if(!schema.find(s=>s.name==="id")) {
-      schema.push({name: "id", type: "autoid"});
-    }
-    let inserts = schema.map(field=>`${field.name} ${dataSchema[field.type].create}`).join(", ");
-    await db.run(`CREATE TABLE '${tableName}' (${inserts});`)
-    this.insertSchema(client, tableName, schema).catch(reject);
-    resolve(true);
-  });
-};
-
-exports.deleteTable = (client, tableName) => {
-  return db.run(`DROP TABLE '${tableName}'`);
-};
-
-exports.run = sql => {
-  return db.run(sql);
+exports.help = {
+  name: "sqlite",
+  type: "providers",
+  description: "Allows you use SQLite functionality throughout Komada.",
 };

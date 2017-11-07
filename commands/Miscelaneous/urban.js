@@ -1,6 +1,6 @@
 const request = require("request");
 
-exports.run = (client, msg, [search, resultNum]) => {
+exports.run = async (client, msg, [search, resultNum]) => {
   const baseUrl = "http://api.urbandictionary.com/v0/define?term=";
   const theUrl = baseUrl + search;
   request({
